@@ -1,0 +1,13 @@
+# Tapo C210 kamera Python könyvtár (helyi hálózati vezérlés + two-way audio)
+pytapo>=3.0.0
+
+# .env fájl betöltéséhez
+python-dotenv>=1.0.0
+
+# Audio feldolgozás (MP3 konverzió)
+pydub>=0.25.1
+
+# MEGJEGYZÉS: ffmpeg rendszer-szintű függőség, külön kell telepíteni:
+#   Ubuntu/Debian: sudo apt install ffmpeg
+#   macOS:         brew install ffmpeg
+#   Windows:       https://ffmpeg.org/download.html

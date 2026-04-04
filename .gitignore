@@ -1,0 +1,28 @@
+# Environment variables - NEVER commit this
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+*.egg-info/
+dist/
+build/
+
+# Audio files (add your own, don't commit large binaries)
+music/*.mp3
+music/*.wav
+music/*.flac
+music/*.ogg
+!music/.gitkeep
+
+# Temp files created during audio conversion
+*.tmp.wav
+
+# IDE
+.vscode/
+.idea/
+*.swp
