@@ -7,6 +7,10 @@ python-dotenv>=1.0.0
 # Audio feldolgozás (MP3 konverzió)
 pydub>=0.25.1
 
+# REST API szerver (Home Assistant integrációhoz)
+fastapi>=0.110.0
+uvicorn[standard]>=0.29.0
+
 # MEGJEGYZÉS: ffmpeg rendszer-szintű függőség, külön kell telepíteni:
 #   Ubuntu/Debian: sudo apt install ffmpeg
 #   macOS:         brew install ffmpeg

@@ -1,0 +1,118 @@
+# ============================================================
+# Home Assistant Lovelace Dashboard kártya
+# ============================================================
+#
+# Ezt a kártyát add hozzá egy meglévő Lovelace dashboardhoz:
+#   Szerkesztés → Kártya hozzáadása → Manuális → YAML nézet
+#
+# Megjelenít:
+#   - Státusz (playing / stopped) + eltelt idő + aktuális hangerő
+#   - PLAY gomb  (zölden világít lejátszás közben)
+#   - STOP gomb  (pirosan világít lejátszás közben)
+#   - Hangerő csúszka (0–100, lépés: 5)
+#
+# Opcionális szín-visszajelzéshez: HACS → card-mod kiegészítő
+# ============================================================
+
+type: vertical-stack
+cards:
+
+  # ── Státusz fejléc ──────────────────────────────────────
+  - type: markdown
+    content: >
+      ## Tapo C210 – Zenelejátszó
+
+      **Státusz:** {{ states('sensor.tapo_music_status') | upper }}
+
+      {% if state_attr('sensor.tapo_music_status', 'file') %}
+      **Fájl:** `{{ state_attr('sensor.tapo_music_status', 'file') }}`
+      {% endif %}
+
+      {% if state_attr('sensor.tapo_music_status', 'elapsed_seconds') %}
+      **Lejátszva:** {{ state_attr('sensor.tapo_music_status', 'elapsed_seconds') }} mp
+      {% endif %}
+
+  # ── Play / Stop gombok ──────────────────────────────────
+  - type: horizontal-stack
+    cards:
+
+      - type: button
+        name: "Lejátszás"
+        icon: mdi:play-circle
+        icon_height: 48px
+        tap_action:
+          action: call-service
+          service: script.play_tapo_music
+        card_mod:
+          style: |
+            ha-card {
+              background: {% if is_state('sensor.tapo_music_status', 'playing') %}
+                #1db954;
+              {% else %}
+                var(--card-background-color);
+              {% endif %}
+            }
+
+      - type: button
+        name: "Leállítás"
+        icon: mdi:stop-circle
+        icon_height: 48px
+        tap_action:
+          action: call-service
+          service: script.stop_tapo_music
+        card_mod:
+          style: |
+            ha-card {
+              background: {% if is_state('sensor.tapo_music_status', 'playing') %}
+                #e74c3c;
+              {% else %}
+                var(--card-background-color);
+              {% endif %}
+            }
+
+  # ── Hangerő csúszka ─────────────────────────────────────
+  - type: entities
+    title: Hangerő
+    entities:
+      - entity: number.tapo_volume
+        name: "Hangszóró hangereje"
+        icon: mdi:volume-high
+
+  # ── Gyors hangerő gombok (opcionális) ───────────────────
+  - type: horizontal-stack
+    cards:
+      - type: button
+        name: "25%"
+        icon: mdi:volume-low
+        tap_action:
+          action: call-service
+          service: script.set_tapo_volume
+          service_data:
+            level: 25
+
+      - type: button
+        name: "50%"
+        icon: mdi:volume-medium
+        tap_action:
+          action: call-service
+          service: script.set_tapo_volume
+          service_data:
+            level: 50
+
+      - type: button
+        name: "75%"
+        icon: mdi:volume-high
+        tap_action:
+          action: call-service
+          service: script.set_tapo_volume
+          service_data:
+            level: 75
+
+      - type: button
+        name: "100%"
+        icon: mdi:volume-variant-off
+        tap_action:
+          action: call-service
+          service: script.set_tapo_volume
+          service_data:
+            level: 100

@@ -1,0 +1,33 @@
+# ============================================================
+# Opcionális Home Assistant automatizációk
+# ============================================================
+#
+# Ezeket importálhatod az HA automatizáció szerkesztőbe,
+# vagy add hozzá az automations.yaml fájlodhoz.
+# ============================================================
+
+# Példa: Reggel 7:00-kor automatikusan elindítja a zenét
+- id: tapo_morning_music
+  alias: "Tapo – Reggeli zene"
+  trigger:
+    - platform: time
+      at: "07:00:00"
+  condition:
+    - condition: state
+      entity_id: sensor.tapo_music_status
+      state: "stopped"
+  action:
+    - service: script.play_tapo_music
+
+# Példa: Éjjel 22:00-kor leállítja, ha még menne
+- id: tapo_night_stop
+  alias: "Tapo – Esti leállítás"
+  trigger:
+    - platform: time
+      at: "22:00:00"
+  condition:
+    - condition: state
+      entity_id: sensor.tapo_music_status
+      state: "playing"
+  action:
+    - service: script.stop_tapo_music

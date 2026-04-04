@@ -1,0 +1,86 @@
+# ============================================================
+# Home Assistant – Tapo C210 Music Player integráció
+# ============================================================
+#
+# Ezt a blokkot másold be a saját configuration.yaml fájlodba,
+# vagy include-old be egy külön fájlból.
+#
+# Csere előtt:
+#   PLAYER_SERVER_IP  →  annak a gépnek az IP-je, ahol a server.py fut
+#                        (pl. 192.168.1.50)
+#   8099              →  a server.py portja (ha megváltoztattad)
+# ============================================================
+
+# -----------------------------------------------------------
+# REST szenzor – HA lekérdezi az aktuális státuszt 5 mp-enként
+# (tartalmazza a lejátszási státuszt ÉS a hangerőt)
+# -----------------------------------------------------------
+sensor:
+  - platform: rest
+    name: "Tapo Music Status"
+    unique_id: tapo_music_status
+    resource: "http://PLAYER_SERVER_IP:8099/status"
+    scan_interval: 5
+    value_template: "{{ 'playing' if value_json.playing else 'stopped' }}"
+    json_attributes:
+      - file
+      - elapsed_seconds
+      - volume
+
+# -----------------------------------------------------------
+# Number entitás – hangerő csúszka (0–100)
+# -----------------------------------------------------------
+# MEGJEGYZÉS: a RESTful number platform HA 2024.x-től érhető el.
+# Ha nem működik, használd a shell_command alapú megoldást (lent).
+# -----------------------------------------------------------
+number:
+  - platform: template
+    numbers:
+      tapo_volume:
+        name: "Tapo Hangerő"
+        unique_id: tapo_music_volume
+        min: 0
+        max: 100
+        step: 5
+        icon: mdi:volume-high
+        value_template: "{{ state_attr('sensor.tapo_music_status', 'volume') | int(50) }}"
+        set_value:
+          service: shell_command.tapo_set_volume
+          data:
+            level: "{{ value | int }}"
+
+# -----------------------------------------------------------
+# Shell parancsok – HA ezeket hívja meg a gombok/csúszka mögé
+# -----------------------------------------------------------
+shell_command:
+  tapo_play:  "curl -s -X POST http://PLAYER_SERVER_IP:8099/play"
+  tapo_stop:  "curl -s -X POST http://PLAYER_SERVER_IP:8099/stop"
+  tapo_set_volume: >-
+    curl -s -X POST http://PLAYER_SERVER_IP:8099/volume
+    -H "Content-Type: application/json"
+    -d "{\"level\": {{ level }}}"
+
+# -----------------------------------------------------------
+# Script – könnyen hívható HA service-ek
+# -----------------------------------------------------------
+script:
+  play_tapo_music:
+    alias: "Tapo kamera zene lejátszás"
+    sequence:
+      - service: shell_command.tapo_play
+
+  stop_tapo_music:
+    alias: "Tapo kamera zene leállítás"
+    sequence:
+      - service: shell_command.tapo_stop
+
+  set_tapo_volume:
+    alias: "Tapo hangerő beállítás"
+    fields:
+      level:
+        description: "Hangerő 0-tól 100-ig"
+        default: 50
+    sequence:
+      - service: shell_command.tapo_set_volume
+        data:
+          level: "{{ level }}"
