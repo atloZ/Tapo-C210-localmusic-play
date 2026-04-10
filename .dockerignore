@@ -1,0 +1,34 @@
+# Titkos adatok – SOHA ne kerüljenek a Docker image-be
+.env
+
+# Git adatbázis
+.git
+.gitignore
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+
+# Virtuális környezetek
+venv/
+.venv/
+env/
+
+# Audio fájlok – host volume-ból töltjük be futásidőben
+music/*.mp3
+music/*.wav
+music/*.flac
+music/*.ogg
+
+# HA konfig sablonok – a szerver nem használja
+ha_config/
+
+# Fejlesztői fájlok
+.vscode/
+.idea/
+*.swp
+
+# Dokumentáció
+README.md

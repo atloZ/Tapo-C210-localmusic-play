@@ -1,0 +1,28 @@
+services:
+  tapo-music:
+    build: .
+    container_name: tapo-music-player
+    restart: unless-stopped
+
+    # network_mode: host – a konténer a gazda hálózatán ül,
+    # így közvetlenül éri el a Tapo kamerát (pl. 192.168.1.100),
+    # és a HAOS a gazda IP:8099 porton éri el az API-t.
+    network_mode: host
+
+    # Kamera hitelesítő adatok betöltése a .env fájlból
+    env_file:
+      - .env
+
+    volumes:
+      # MP3 fájlok: a host ./music/ mappája kerül becsatolásra.
+      # Ide kell másolni a lejátszandó fájlokat – nem kell rebuild.
+      - ./music:/app/music
+
+    # Egészség-ellenőrzés: 30 mp-enként pingeli az API-t
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8099/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s

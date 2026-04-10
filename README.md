@@ -10,6 +10,7 @@ MP3 fájlt játszik le a Tapo C210 IP kamera beépített hangszóróján helyi h
 - [Telepítés](#telepítés)
 - [Konfiguráció](#konfiguráció)
 - [Parancssori használat](#parancssori-használat)
+- [Docker deploy](#docker-deploy)
 - [Home Assistant integráció](#home-assistant-integráció)
 - [API referencia](#api-referencia)
 - [Könyvtárstruktúra](#könyvtárstruktúra)
@@ -89,6 +90,79 @@ python main.py --file music/dal.mp3
 
 # Részletes naplózás
 python main.py --verbose
+```
+
+---
+
+## Docker deploy
+
+A szerver Docker konténerként fut, ami izolált, könnyen indítható és újraindítható.
+
+### Hálózat (fontos!)
+
+A `docker-compose.yml` **`network_mode: host`** módot használ:
+- A konténer a gazdagép hálózatán ül → közvetlenül éri a Tapo kamerát
+- A HAOS a **gazdagép LAN IP-jén** (pl. `192.168.1.50`) éri el a `8099`-es portot
+
+### Előfeltétel: Docker telepítése
+
+```bash
+# Ubuntu / Debian / Raspberry Pi OS
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER   # logout + login után hatásos
+```
+
+### 1. Konfiguráció
+
+```bash
+cp .env.example .env
+# Szerkeszd ki: TAPO_IP, TAPO_USER, TAPO_PASSWORD, MUSIC_FILE
+```
+
+### 2. MP3 fájl elhelyezése
+
+```bash
+cp /ut/a/dalodhoz/dal.mp3 music/
+```
+
+A `./music/` mappa be van csatolva a konténerbe – **nem kell rebuild** új fájl hozzáadásakor.
+
+### 3. Build és indítás
+
+```bash
+docker compose up -d --build
+```
+
+### Ellenőrzés
+
+```bash
+# Szerver él?
+curl http://localhost:8099/health
+# → {"ok": true}
+
+# Státusz
+curl http://localhost:8099/status
+# → {"playing": false, "file": null, "elapsed_seconds": null, "volume": 50}
+
+# Teszt lejátszás
+curl -X POST http://localhost:8099/play
+```
+
+### Hasznos parancsok
+
+| Parancs | Leírás |
+|---------|--------|
+| `docker compose up -d --build` | Build + indítás háttérben |
+| `docker compose logs -f` | Élő naplók |
+| `docker compose restart` | Újraindítás (pl. .env változás után) |
+| `docker compose down` | Leállítás |
+| `docker compose pull && docker compose up -d --build` | Frissítés |
+
+### Szerver IP meghatározása a HAOS bekötéshez
+
+```bash
+hostname -I | awk '{print $1}'
+# pl. 192.168.1.50  ← ezt kell beírni PLAYER_SERVER_IP helyére
 ```
 
 ---
@@ -306,9 +380,12 @@ Tapo-C210-localmusic-play/
 ├── server.py            # FastAPI REST szerver (HA integrációhoz)
 ├── tapo_player.py       # TapoAudioPlayer osztály
 ├── requirements.txt     # Python függőségek
+├── Dockerfile           # Docker image leírása
+├── docker-compose.yml   # Konténer konfiguráció (host network, volume, healthcheck)
+├── .dockerignore        # Docker build-ből kizárt fájlok
 ├── .env.example         # Konfiguráció sablon
 ├── .gitignore
-├── music/               # MP3 fájlok helye
+├── music/               # MP3 fájlok helye (host volume)
 │   └── .gitkeep
 └── ha_config/           # Home Assistant konfigurációs sablonok
     ├── configuration.yaml   # HA config (sensor, number, shell_command, script)
@@ -346,3 +423,21 @@ Ez nem hiba – a szerver automatikusan ffmpeg RTSP fallback-re vált. Ha a fall
 ```bash
 pip install --upgrade pytapo
 ```
+
+### Docker: `Permission denied` a `music/` mappán
+```bash
+chmod -R 755 music/
+```
+
+### Docker: konténer elindul, de a kamera nem érhető el
+Ellenőrizd, hogy `network_mode: host` van-e a `docker-compose.yml`-ben.
+Bridge hálózat esetén a konténer nem látja közvetlenül a LAN eszközöket.
+
+### Docker: változtattam a `.env`-ben, de nem hat
+```bash
+docker compose restart   # elegendő, nem kell rebuild
+```
+
+### Docker: port foglalt (`address already in use`)
+Valami más is használja a 8099-es portot. Módosítsd a portot a `docker-compose.yml`-ben
+és a `.env` / HA konfigurációban egységesen.
